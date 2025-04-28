@@ -10,7 +10,7 @@ export const useSessionCleanup = () => {
     const cleanupSession = async () => {
       try {
         // First check if we have a valid session
-        const { data, error } = await supabase.auth.getSession();
+        const { error } = await supabase.auth.getSession();
         
         if (error) {
           console.log('Session error detected, cleaning up local storage');

@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 
 // List of available buckets - if a bucket doesn't exist, we'll use the first one as a fallback
 const AVAILABLE_BUCKETS = ['memorial-covers', 'memory-media', 'memorial-media', 'avatars'];
-const DEFAULT_BUCKET = 'memory-media'; // Fallback bucket
+// removed DEFAULT_BUCKET as it was unused
 
 /**
  * Helper function to upload a file to Supabase Storage
@@ -121,8 +121,9 @@ export async function uploadFile(
         `Note: Used '${uploadBucket}' bucket instead of '${bucket}' which doesn't exist.` : 
         undefined
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Unexpected error during file upload:', error);
+    const message = error instanceof Error ? error.message : String(error);
     
     // Last resort fallback to object URL
     try {
@@ -131,12 +132,12 @@ export async function uploadFile(
       return {
         success: true,
         url: objectUrl,
-        error: `Storage error, using temporary URL: ${error.message || 'Unknown error'}`
+        error: `Storage error, using temporary URL: ${message}`
       };
-    } catch (fallbackError) {
+    } catch {
       return {
         success: false,
-        error: `Failed to handle image: ${error.message || 'Unknown error'}`
+        error: `Failed to handle image: ${message}`
       };
     }
   }
@@ -207,11 +208,12 @@ export async function deleteFile(
     }
     
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Unexpected error during file deletion:', error);
+    const message = error instanceof Error ? error.message : String(error);
     return {
       success: false,
-      error: error.message || 'An unexpected error occurred'
+      error: message || 'An unexpected error occurred'
     };
   }
 }

@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { PlusCircle, Users, Calendar, Loader } from 'lucide-react';
 import { format } from 'date-fns';
-import MemorialActions from '../components/dashboard/MemorialActions';
+const MemorialActions = lazy(() => import('../components/dashboard/MemorialActions'));
 import { useToast } from '../hooks/useToast';
 import { getUserMemorials, deleteMemorial } from '../lib/memorials';
 import { Memorial } from '../types';
@@ -169,7 +169,9 @@ const Dashboard = () => {
                             </div>
                           </div>
                         </div>
-                        <MemorialActions memorial={memorial} onDelete={handleDeleteMemorial} />
+                        <Suspense fallback={<Loader size={20} className="animate-spin text-memorial-500" />}>
+                          <MemorialActions memorial={memorial} onDelete={handleDeleteMemorial} />
+                        </Suspense>
                       </div>
                       
                       <div className="mt-4 flex flex-wrap gap-2">

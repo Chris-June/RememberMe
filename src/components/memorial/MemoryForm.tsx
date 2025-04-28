@@ -6,15 +6,14 @@ import EmotionSelector from './EmotionSelector';
 import { setMemoryMediaFile } from '../../lib/memorials';
 import { useAuthStore } from '../../store/authStore';
 import { uploadFile } from '../../lib/storage';
-
-type Emotion = 'joyful' | 'funny' | 'thoughtful' | 'bittersweet' | 'sad';
+import type { Emotion, MemoryFormData, CreateMemoryPayload } from '../../types/memorial';
 
 interface MemoryFormProps {
   memorialId: string;
   memorialName: string;
-  onSubmit?: (memory: any) => void;
-  onPreview?: (memory: any) => void;
-  initialData?: any;
+  onSubmit?: (memory: CreateMemoryPayload) => void;
+  onPreview?: (memory: MemoryFormData) => void;
+  initialData?: Partial<MemoryFormData>;
   isSubmitting?: boolean;
 }
 
@@ -29,12 +28,14 @@ const MemoryForm: React.FC<MemoryFormProps> = ({
   const { toast } = useToast();
   const { user } = useAuthStore();
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<MemoryFormData>({
     content: initialData.content || '',
     relationship: initialData.relationship || '',
     timePeriod: initialData.timePeriod || '',
     emotion: initialData.emotion as Emotion || '',
     contributorName: initialData.contributorName || '',
+    mediaFile: null,
+    mediaPreview: null,
   });
   
   const [mediaFile, setMediaFile] = useState<File | null>(null);
@@ -139,14 +140,14 @@ const MemoryForm: React.FC<MemoryFormProps> = ({
           toast({
             title: "Image Storage Notice",
             description: uploadResult.error,
-            variant: "warning",
+            variant: "default",
           });
         }
       } else {
         toast({
           title: "Image Upload Issue",
           description: uploadResult.error || "Could not upload the image, but your memory will still be saved.",
-          variant: "warning",
+          variant: "default",
         });
       }
     }
@@ -155,7 +156,7 @@ const MemoryForm: React.FC<MemoryFormProps> = ({
     setMemoryMediaFile(mediaFile);
     
     // Prepare data for submission
-    const memoryData = {
+    const memoryData: CreateMemoryPayload = {
       ...formData,
       memorialId,
       mediaUrl

@@ -10,6 +10,14 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', '@shadcn/ui', 'framer-motion', 'lucide-react', 'date-fns', 'react-router-dom']
+        }
+      }
+    }
   },
   server: {
     host: true

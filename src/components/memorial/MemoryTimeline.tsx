@@ -67,10 +67,6 @@ const MemoryTimeline: React.FC<MemoryTimelineProps> = ({ memories, onDeleteMemor
             </div>
             <MemoryCard 
               memory={memory}
-              onUpdateMemory={(updatedMemory) => {
-                // The parent component will handle reflecting updates to the memory
-                // This is handled through the props passed in from MemorialPage
-              }}
               onDeleteMemory={handleDeleteMemory}
             />
           </motion.div>

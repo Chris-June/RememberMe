@@ -3,16 +3,11 @@ import { Send, Loader } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 interface CommentFormProps {
-  memoryId: string;
   onCommentSubmit: (comment: { content: string }) => Promise<void>;
   isSubmitting: boolean;
 }
 
-const CommentForm: React.FC<CommentFormProps> = ({ 
-  memoryId, 
-  onCommentSubmit, 
-  isSubmitting 
-}) => {
+const CommentForm: React.FC<CommentFormProps> = ({ onCommentSubmit, isSubmitting }) => {
   const [comment, setComment] = useState('');
   const { user } = useAuthStore();
   

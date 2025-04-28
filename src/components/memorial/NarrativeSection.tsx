@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import type { Memorial } from '../../types';
 import { motion } from 'framer-motion';
 import { RefreshCw, ThumbsUp, Loader, Clock } from 'lucide-react';
 import { generateNarrative } from '../../lib/ai';
@@ -9,7 +10,7 @@ interface NarrativeSectionProps {
   narrative: string;
   memorialId: string;
   onNarrativeUpdate?: (newNarrative: string) => void;
-  memorial?: any;
+  memorial?: Memorial;
 }
 
 const NarrativeSection: React.FC<NarrativeSectionProps> = ({ 
@@ -59,7 +60,7 @@ const NarrativeSection: React.FC<NarrativeSectionProps> = ({
       const avgParagraphLength = Math.floor(currentNarrative.length / 3);
       const sentences = currentNarrative.match(/[^.!?]+[.!?]+/g) || [currentNarrative];
       
-      let newParagraphs = [];
+      const newParagraphs = [];
       let currentParagraph = "";
       
       for (const sentence of sentences) {

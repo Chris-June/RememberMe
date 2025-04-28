@@ -99,7 +99,7 @@ const CreateMemorial = () => {
     
     try {
       // Upload cover image to Supabase storage if selected
-      let coverImage = null;
+      let coverImage: string | undefined;
       
       if (selectedFile) {
         const uploadResult = await uploadFile('memorial-covers', selectedFile, user.id);
@@ -112,21 +112,27 @@ const CreateMemorial = () => {
             toast({
               title: "Image Storage Notice",
               description: uploadResult.error,
-              variant: "warning",
+              variant: "destructive",
             });
           }
         } else {
           toast({
             title: "Image Upload Issue",
             description: uploadResult.error || "Could not upload image. Memorial will be created without a cover image.",
-            variant: "warning",
+            variant: "destructive",
           });
         }
       }
       
       // Create memorial with uploaded image URL
       const result = await createMemorial({
-        ...formData,
+        fullName: formData.fullName,
+        birthDate: formData.birthDate,
+        passedDate: formData.passedDate,
+        description: formData.description,
+        privacy: formData.privacy as 'public' | 'family' | 'private',
+        tone: formData.tone,
+        style: formData.style,
         coverImage,
         user_id: user.id
       });
@@ -141,11 +147,12 @@ const CreateMemorial = () => {
       } else {
         throw new Error(result.error || "Failed to create memorial");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating memorial:", error);
+      const message = error instanceof Error ? error.message : String(error);
       toast({
         title: "Error creating memorial",
-        description: error.message || "There was a problem creating the memorial.",
+        description: message || "There was a problem creating the memorial.",
         variant: "destructive",
       });
     } finally {

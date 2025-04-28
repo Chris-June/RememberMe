@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, Heart, Share2, Users, MessageSquare, PenSquare, Loader, Settings } from 'lucide-react';
 import { format } from 'date-fns';
-import MemoryCard from '../components/memorial/MemoryCard';
 import NarrativeSection from '../components/memorial/NarrativeSection';
 import EmotionBadge from '../components/memorial/EmotionBadge';
 import MemoryTimeline from '../components/memorial/MemoryTimeline';
@@ -12,7 +11,9 @@ import { getMemorial, getMemories, updateMemorial } from '../lib/memorials';
 import { checkMemorialAccess } from '../lib/invites';
 import { Memorial, Memory } from '../types';
 import { useAuthStore } from '../store/authStore';
-import ShareOptions from '../components/memorial/ShareOptions';
+
+const MemoryCard = lazy(() => import('../components/memorial/MemoryCard'));
+const ShareOptions = lazy(() => import('../components/memorial/ShareOptions'));
 
 type TabType = 'narrative' | 'timeline' | 'gallery' | 'shares';
 
@@ -345,11 +346,14 @@ const MemorialPage = () => {
                   {memories.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {memories.slice(0, 4).map((memory) => (
-                        <MemoryCard 
-                          key={memory.id} 
-                          memory={memory} 
-                          onUpdateMemory={handleUpdateMemory}
-                        />
+                        <Suspense fallback={<Loader size={20} className="animate-spin text-memorial-500" />}>
+                          <MemoryCard 
+                            key={memory.id} 
+                            memory={memory} 
+                            onDeleteMemory={handleDeleteMemory}
+                            onUpdateMemory={handleUpdateMemory}
+                          />
+                        </Suspense>
                       ))}
                     </div>
                   ) : (
@@ -462,13 +466,15 @@ const MemorialPage = () => {
                 </div>
                 
                 <div className="max-w-xl mx-auto">
-                  <ShareOptions 
-                    memorialId={memorial.id}
-                    memorialName={memorial.fullName}
-                    privacy={memorial.privacy}
-                    isCreator={!!isCreator}
-                    onPrivacyChange={handlePrivacyChange}
-                  />
+                  <Suspense fallback={<Loader size={20} className="animate-spin text-memorial-500" />}>
+                    <ShareOptions 
+                      memorialId={memorial.id}
+                      memorialName={memorial.fullName}
+                      privacy={memorial.privacy}
+                      isCreator={!!isCreator}
+                      onPrivacyChange={handlePrivacyChange}
+                    />
+                  </Suspense>
                 </div>
               </motion.div>
             )}

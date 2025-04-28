@@ -5,16 +5,17 @@ import { Loader } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import MemoryForm from '../components/memorial/MemoryForm';
 import { getMemorial, addMemory } from '../lib/memorials';
-import { Memory } from '../types';
+import type { Memorial } from '../types';
+import type { MemoryFormData, CreateMemoryPayload } from '../types/memorial';
 
 const AddMemory = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [memorial, setMemorial] = useState<any>(null);
+  const [memorial, setMemorial] = useState<Memorial | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
-  const [previewData, setPreviewData] = useState<any>(null);
+  const [previewData, setPreviewData] = useState<MemoryFormData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   useEffect(() => {
@@ -28,7 +29,7 @@ const AddMemory = () => {
     setIsLoading(true);
     try {
       const result = await getMemorial(memorialId);
-      if (result.success) {
+      if (result.success && result.memorial) {
         setMemorial(result.memorial);
       } else {
         toast({
@@ -49,20 +50,17 @@ const AddMemory = () => {
     }
   };
   
-  const handlePreview = (data: any) => {
+  const handlePreview = (data: MemoryFormData) => {
     setPreviewData(data);
     setShowPreview(true);
   };
   
-  const handleSubmit = async (data: Partial<Memory>) => {
+  const handleSubmit = async (data: CreateMemoryPayload) => {
     if (!id) return;
     
     setIsSubmitting(true);
     try {
-      const result = await addMemory({
-        ...data,
-        memorialId: id
-      });
+      const result = await addMemory(data);
       
       if (result.success) {
         toast({

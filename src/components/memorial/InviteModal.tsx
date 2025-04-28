@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Copy, CheckCircle, Loader, Mail, Share2 } from 'lucide-react';
+import { Copy, CheckCircle, Loader, Mail } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import { generateInviteCode } from '../../lib/invites';
 

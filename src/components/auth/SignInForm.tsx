@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AtSign, User, Lock, Loader } from 'lucide-react';
-import { useAuthStore } from '../../store/authStore';
 import { useToast } from '../../hooks/useToast';
 import PasswordInput from './PasswordInput';
 import { supabase } from '../../lib/supabase';
@@ -14,14 +13,18 @@ const SignInForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   
-  const [formData, setFormData] = useState({
+  // Define form data shape
+  type SignInFormData = { identifier: string; password: string };
+  
+  const [formData, setFormData] = useState<SignInFormData>({
     identifier: '', // can be email or username
     password: '',
   });
 
   // Check for invite code in URL or session storage
+  type LocationState = { isInvite?: boolean; inviteCode?: string; from?: string };
   useEffect(() => {
-    const state = location.state as any;
+    const state = location.state as LocationState;
     
     if (state?.isInvite && state?.inviteCode) {
       toast({
@@ -139,7 +142,7 @@ const SignInForm = () => {
       
       // Check if there's a pending invite in session storage
       const pendingInvite = sessionStorage.getItem('pendingInvite');
-      const state = location.state as any;
+      const state = location.state as LocationState;
       
       if (pendingInvite) {
         // Navigate to join memorial page
@@ -152,8 +155,8 @@ const SignInForm = () => {
         const from = state?.from || '/dashboard';
         navigate(from, { replace: true });
       }
-    } catch (error) {
-      console.error("Unexpected error during sign in:", error);
+    } catch (err: unknown) {
+      console.error("Unexpected error during sign in:", err);
       setAuthError("An unexpected error occurred. Please try again later.");
       toast({
         title: "Sign in failed",

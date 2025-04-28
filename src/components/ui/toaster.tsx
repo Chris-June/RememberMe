@@ -6,7 +6,7 @@ interface Toast {
   id: string;
   title: string;
   description?: string;
-  variant?: 'default' | 'destructive' | 'success';
+  variant?: 'default' | 'destructive' | 'success' | 'warning';
   duration?: number;
 }
 
@@ -74,6 +74,7 @@ export const Toaster: React.FC = () => {
             className={`p-4 rounded-lg shadow-lg ${
               toast.variant === 'destructive' ? 'bg-red-600 text-white' :
               toast.variant === 'success' ? 'bg-green-600 text-white' :
+              toast.variant === 'warning' ? 'bg-yellow-600 text-white' :
               'bg-white text-neutral-800 border border-neutral-200'
             }`}
           >
@@ -82,7 +83,7 @@ export const Toaster: React.FC = () => {
                 <h3 className="font-medium">{toast.title}</h3>
                 {toast.description && (
                   <p className={`mt-1 text-sm ${
-                    toast.variant === 'destructive' || toast.variant === 'success' 
+                    toast.variant === 'destructive' || toast.variant === 'success' || toast.variant === 'warning'
                       ? 'text-white text-opacity-90' 
                       : 'text-neutral-600'
                   }`}>
@@ -93,7 +94,7 @@ export const Toaster: React.FC = () => {
               <button 
                 onClick={() => dismiss(toast.id)}
                 className={`p-1 rounded-full ${
-                  toast.variant === 'destructive' || toast.variant === 'success'
+                  toast.variant === 'destructive' || toast.variant === 'success' || toast.variant === 'warning'
                     ? 'text-white text-opacity-70 hover:text-opacity-100'
                     : 'text-neutral-500 hover:text-neutral-800'
                 }`}
