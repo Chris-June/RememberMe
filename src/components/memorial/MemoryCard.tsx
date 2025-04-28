@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { Heart, MessageSquare, ChevronDown, ChevronUp, X, Loader } from 'lucide-react';
+import { Heart, MessageSquare, ChevronDown, ChevronUp, Loader, Trash2 } from 'lucide-react';
 import { Memory, Comment } from '../../types';
 import { useAuthStore } from '../../store/authStore';
 import CommentList from './CommentList';
 import CommentForm from './CommentForm';
-import { addComment, deleteComment, toggleMemoryLike } from '../../lib/memorials';
+import { addComment, deleteComment, toggleMemoryLike, deleteMemory } from '../../lib/memorials';
 import { useToast } from '../../hooks/useToast';
+import { motion } from 'framer-motion';
 
 interface MemoryCardProps {
   memory: Memory;
   onUpdateMemory?: (updatedMemory: Memory) => void;
+  onDeleteMemory?: (memoryId: string) => void;
 }
 
-const MemoryCard: React.FC<MemoryCardProps> = ({ memory, onUpdateMemory }) => {
+const MemoryCard: React.FC<MemoryCardProps> = ({ memory, onUpdateMemory, onDeleteMemory }) => {
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<Comment[]>(memory.comments || []);
   const [isLiking, setIsLiking] = useState(false);
@@ -21,10 +23,49 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ memory, onUpdateMemory }) => {
   const [isDeletingComment, setIsDeletingComment] = useState(false);
   const [likeCount, setLikeCount] = useState(memory.likes || 0);
   const [hasLiked, setHasLiked] = useState(memory.hasLiked || false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeletingMemory, setIsDeletingMemory] = useState(false);
   
   const { user } = useAuthStore();
   const { toast } = useToast();
   
+  // Only the owner of the memory can delete
+  const isOwner = user && memory.contributorId === user.id;
+  
+  const handleDeleteMemory = async () => {
+    setIsDeletingMemory(true);
+    try {
+      const result = await deleteMemory(memory.id);
+      if (result.success) {
+        toast({
+          title: 'Memory Deleted',
+          description: 'Your memory has been deleted.',
+          variant: 'success',
+        });
+        setShowDeleteDialog(false);
+        if (onDeleteMemory) onDeleteMemory(memory.id);
+      } else {
+        toast({
+          title: 'Failed to Delete',
+          description: result.error || 'Could not delete memory.',
+          variant: 'destructive',
+        });
+      }
+    } catch (err: unknown) {
+      let message = 'Unexpected error occurred.';
+      if (err instanceof Error) {
+        message = err.message;
+      }
+      toast({
+        title: 'Error',
+        description: message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeletingMemory(false);
+    }
+  };
+
   const toggleComments = () => {
     setShowComments(!showComments);
   };
@@ -179,6 +220,16 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ memory, onUpdateMemory }) => {
       <p className="text-neutral-800 mb-4">{memory.content}</p>
       
       <div className="flex items-center justify-between">
+        {isOwner && (
+          <button
+            className="flex items-center text-red-600 hover:bg-neutral-50 rounded px-2 py-1 text-xs transition-colors"
+            onClick={() => setShowDeleteDialog(true)}
+            disabled={isDeletingMemory}
+            aria-label="Delete memory"
+          >
+            <Trash2 size={14} className="mr-1" /> Delete
+          </button>
+        )}
         {memory.emotion && (
           <span 
             className={`inline-block px-2 py-1 text-xs rounded-full bg-neutral-100 ${
@@ -241,6 +292,37 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ memory, onUpdateMemory }) => {
             onCommentSubmit={handleAddComment}
             isSubmitting={isSubmittingComment}
           />
+        </div>
+      )}
+      
+      {showDeleteDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full"
+          >
+            <h2 className="text-lg font-semibold mb-2">Delete Memory?</h2>
+            <p className="mb-4 text-neutral-700">Are you sure you want to delete this memory? This action cannot be undone.</p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 text-neutral-600 hover:bg-neutral-100 rounded"
+                onClick={() => setShowDeleteDialog(false)}
+                disabled={isDeletingMemory}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                onClick={handleDeleteMemory}
+                disabled={isDeletingMemory}
+              >
+                {isDeletingMemory ? <Loader size={16} className="animate-spin inline mr-1" /> : null}
+                Delete
+              </button>
+            </div>
+          </motion.div>
         </div>
       )}
     </div>

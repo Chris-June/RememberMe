@@ -8,7 +8,6 @@ import { useToast } from '../hooks/useToast';
 import { getUserMemorials, deleteMemorial } from '../lib/memorials';
 import { Memorial } from '../types';
 import { useAuthStore } from '../store/authStore';
-import { supabase } from '../lib/supabase';
 
 const Dashboard = () => {
   const [memorials, setMemorials] = useState<Memorial[]>([]);
@@ -29,34 +28,22 @@ const Dashboard = () => {
     
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('memorials')
-        .select('id, user_id')
-        .eq('user_id', user.id)
-        .order('createdat', { ascending: false });
-      
-      if (error) {
-        console.error("Error fetching memorials:", error);
+      const result = await getUserMemorials(user.id);
+      if (result.success && result.memorials) {
+        setMemorials(result.memorials);
+      } else {
         toast({
           title: "Failed to load memorials",
-          description: error.message || "There was a problem loading your memorials.",
+          description: result.error || "An unknown error occurred.",
           variant: "destructive",
         });
-        setIsLoading(false);
-        return;
       }
-      
-      console.log(`Found ${data.length} memorials for user`);
-      
-      // Just use the minimal data for testing
-      const memorials = data;
-
-      setMemorials(memorials);
-    } catch (error) {
-      console.error("Error in fetchMemorials:", error);
+    } catch (err: unknown) {
+      let message = 'An unexpected error occurred.';
+      if (err instanceof Error) message = err.message;
       toast({
         title: "Error",
-        description: "An unexpected error occurred while loading your memorials.",
+        description: message,
         variant: "destructive",
       });
     } finally {

@@ -1,6 +1,45 @@
 import { supabase } from './supabase';
 import { Memorial, Memory, Comment } from '../types';
 
+/**
+ * Deletes a memory by its ID via the Supabase Edge Function.
+ * Requires the user to be authenticated; only the owner can delete their memory.
+ * @param memoryId - The ID of the memory to delete
+ * @returns {Promise<{ success: boolean; error?: string }>} Result of the deletion
+ */
+export async function deleteMemory(memoryId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Get the current user's access token
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    if (authError || !session) {
+      return { success: false, error: 'User not authenticated' };
+    }
+    const accessToken = session.access_token;
+
+    // Call the Edge Function endpoint
+    const response = await fetch('/functions/v1/generate-narrative?memoryId=' + encodeURIComponent(memoryId), {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      return { success: false, error: result.error || 'Failed to delete memory' };
+    }
+    return { success: true };
+  } catch (error: unknown) {
+    let message = 'An unexpected error occurred';
+    if (error instanceof Error) {
+      message = error.message;
+    }
+
+    console.error('Error deleting memory:', error);
+    return { success: false, error: message };
+  }
+}
+
 export async function createMemorial(memorialData: Partial<Memorial>): Promise<{ success: boolean; memorial?: Memorial; error?: string }> {
   try {
     // Transform camelCase properties to match database column names
@@ -46,9 +85,14 @@ export async function createMemorial(memorialData: Partial<Memorial>): Promise<{
     };
 
     return { success: true, memorial };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    let message = 'An unexpected error occurred';
+    if (error instanceof Error) {
+      message = error.message;
+    }
+
     console.error('Error creating memorial:', error);
-    return { success: false, error: error.message || 'An unexpected error occurred' };
+    return { success: false, error: message };
   }
 }
 
@@ -88,9 +132,14 @@ export async function getMemorial(id: string): Promise<{ success: boolean; memor
     };
 
     return { success: true, memorial };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    let message = 'An unexpected error occurred';
+    if (error instanceof Error) {
+      message = error.message;
+    }
+
     console.error('Error fetching memorial:', error);
-    return { success: false, error: error.message || 'An unexpected error occurred' };
+    return { success: false, error: message };
   }
 }
 
@@ -131,16 +180,21 @@ export async function getUserMemorials(userId: string): Promise<{ success: boole
     }));
 
     return { success: true, memorials };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    let message = 'An unexpected error occurred';
+    if (error instanceof Error) {
+      message = error.message;
+    }
+
     console.error('Error fetching user memorials:', error);
-    return { success: false, error: error.message || 'An unexpected error occurred' };
+    return { success: false, error: message };
   }
 }
 
 export async function updateMemorial(id: string, memorialData: Partial<Memorial>): Promise<{ success: boolean; memorial?: Memorial; error?: string }> {
   try {
     // Transform camelCase properties to match database column names
-    const dbData: any = {};
+    const dbData: Record<string, unknown> = {};
     
     if (memorialData.fullName !== undefined) dbData.fullname = memorialData.fullName;
     if (memorialData.birthDate !== undefined) dbData.birthdate = memorialData.birthDate;
@@ -183,9 +237,14 @@ export async function updateMemorial(id: string, memorialData: Partial<Memorial>
     };
 
     return { success: true, memorial };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    let message = 'An unexpected error occurred';
+    if (error instanceof Error) {
+      message = error.message;
+    }
+
     console.error('Error updating memorial:', error);
-    return { success: false, error: error.message || 'An unexpected error occurred' };
+    return { success: false, error: message };
   }
 }
 
@@ -214,9 +273,14 @@ export async function deleteMemorial(id: string): Promise<{ success: boolean; er
     }
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    let message = 'An unexpected error occurred';
+    if (error instanceof Error) {
+      message = error.message;
+    }
+
     console.error('Error deleting memorial:', error);
-    return { success: false, error: error.message || 'An unexpected error occurred' };
+    return { success: false, error: message };
   }
 }
 
@@ -254,7 +318,6 @@ export async function getMemories(memorialId: string): Promise<{ success: boolea
     }
     
     // Get comments for all memories in a single query for better performance
-    // Fix: Using a simpler query that doesn't rely on a direct foreign key between comments and profiles
     const { data: commentsData, error: commentsError } = await supabase
       .from('comments')
       .select(`
@@ -329,9 +392,14 @@ export async function getMemories(memorialId: string): Promise<{ success: boolea
     }));
 
     return { success: true, memories };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    let message = 'An unexpected error occurred';
+    if (error instanceof Error) {
+      message = error.message;
+    }
+
     console.error('Error fetching memories:', error);
-    return { success: false, error: error.message || 'An unexpected error occurred' };
+    return { success: false, error: message };
   }
 }
 
@@ -398,9 +466,14 @@ export async function addMemory(memoryData: Partial<Memory>): Promise<{ success:
     };
 
     return { success: true, memory };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    let message = 'An unexpected error occurred';
+    if (error instanceof Error) {
+      message = error.message;
+    }
+
     console.error('Error creating memory:', error);
-    return { success: false, error: error.message || 'An unexpected error occurred' };
+    return { success: false, error: message };
   }
 }
 
@@ -437,9 +510,14 @@ export async function getUserMemories(userId: string): Promise<{ success: boolea
     }));
 
     return { success: true, memories };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    let message = 'An unexpected error occurred';
+    if (error instanceof Error) {
+      message = error.message;
+    }
+
     console.error('Error fetching user memories:', error);
-    return { success: false, error: error.message || 'An unexpected error occurred' };
+    return { success: false, error: message };
   }
 }
 
@@ -513,9 +591,14 @@ export async function toggleMemoryLike(memoryId: string): Promise<{ success: boo
     }
     
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    let message = 'An unexpected error occurred';
+    if (error instanceof Error) {
+      message = error.message;
+    }
+
     console.error('Error toggling like:', error);
-    return { success: false, error: error.message || 'An unexpected error occurred' };
+    return { success: false, error: message };
   }
 }
 
@@ -566,9 +649,14 @@ export async function addComment(commentData: { memoryId: string; content: strin
     };
     
     return { success: true, comment };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    let message = 'An unexpected error occurred';
+    if (error instanceof Error) {
+      message = error.message;
+    }
+
     console.error('Error creating comment:', error);
-    return { success: false, error: error.message || 'An unexpected error occurred' };
+    return { success: false, error: message };
   }
 }
 
@@ -586,9 +674,14 @@ export async function deleteComment(commentId: string): Promise<{ success: boole
     }
     
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    let message = 'An unexpected error occurred';
+    if (error instanceof Error) {
+      message = error.message;
+    }
+
     console.error('Error deleting comment:', error);
-    return { success: false, error: error.message || 'An unexpected error occurred' };
+    return { success: false, error: message };
   }
 }
 

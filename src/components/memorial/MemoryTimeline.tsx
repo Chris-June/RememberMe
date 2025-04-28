@@ -8,26 +8,37 @@ import EmotionBadge from './EmotionBadge';
 
 interface MemoryTimelineProps {
   memories: Memory[];
+  onDeleteMemory?: (memoryId: string) => void;
 }
 
-const MemoryTimeline: React.FC<MemoryTimelineProps> = ({ memories }) => {
+const MemoryTimeline: React.FC<MemoryTimelineProps> = ({ memories, onDeleteMemory }) => {
   const [visibleCount, setVisibleCount] = useState(5);
   const [selectedEmotion, setSelectedEmotion] = useState<string>('all');
-  
+  const [localMemories, setLocalMemories] = useState<Memory[]>(memories);
+
+  React.useEffect(() => {
+    setLocalMemories(memories);
+  }, [memories]);
+
   const filteredMemories = selectedEmotion === 'all'
-    ? memories
-    : memories.filter(memory => memory.emotion === selectedEmotion);
-  
+    ? localMemories
+    : localMemories.filter(memory => memory.emotion === selectedEmotion);
+
   const loadMore = () => {
     setVisibleCount(prev => prev + 5);
   };
-  
+
   const handleEmotionSelect = (emotion: string) => {
     setSelectedEmotion(emotion);
     // Reset visible count when filter changes
     setVisibleCount(5);
   };
-  
+
+  const handleDeleteMemory = (memoryId: string) => {
+    setLocalMemories(prev => prev.filter(m => m.id !== memoryId));
+    if (onDeleteMemory) onDeleteMemory(memoryId);
+  };
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap gap-2">
@@ -60,6 +71,7 @@ const MemoryTimeline: React.FC<MemoryTimelineProps> = ({ memories }) => {
                 // The parent component will handle reflecting updates to the memory
                 // This is handled through the props passed in from MemorialPage
               }}
+              onDeleteMemory={handleDeleteMemory}
             />
           </motion.div>
         ))}

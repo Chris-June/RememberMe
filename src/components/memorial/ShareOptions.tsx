@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { Link as LinkIcon, Copy, CheckCircle, Users, Lock, Share2 } from 'lucide-react';
+import { Link as LinkIcon, Copy, CheckCircle, Share2 } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import InviteModal from './InviteModal';
 
 interface ShareOptionsProps {
-  memorialId: string;
+  memorialId: string; 
   memorialName: string;
-  privacy: string;
+  privacy: "public" | "family" | "private";
   isCreator: boolean;
-  onPrivacyChange?: (privacy: string) => Promise<void>;
+  onPrivacyChange?: (privacy: "public" | "family" | "private") => Promise<void>;
 }
 
 const ShareOptions: React.FC<ShareOptionsProps> = ({
@@ -36,11 +36,11 @@ const ShareOptions: React.FC<ShareOptionsProps> = ({
     });
   };
 
-  const handlePrivacyChange = async (newPrivacy: string) => {
+  const handlePrivacyChange = async (newPrivacy: "public" | "family" | "private") => {
     if (!isCreator || !onPrivacyChange) return;
-    
     await onPrivacyChange(newPrivacy);
   };
+
 
   const handleOpenInviteModal = () => {
     setIsModalOpen(true);

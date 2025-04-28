@@ -21,6 +21,11 @@ const MemorialPage = () => {
   const [activeTab, setActiveTab] = useState<TabType>('narrative');
   const [memorial, setMemorial] = useState<Memorial | null>(null);
   const [memories, setMemories] = useState<Memory[]>([]);
+
+  // Remove memory from state when deleted
+  const handleDeleteMemory = (memoryId: string) => {
+    setMemories(prev => prev.filter(m => m.id !== memoryId));
+  };
   const [isLoading, setIsLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [totalLikes, setTotalLikes] = useState(0);
@@ -105,7 +110,7 @@ const MemorialPage = () => {
     setActiveTab(tab);
   };
   
-  const handlePrivacyChange = async (privacy: string) => {
+  const handlePrivacyChange = async (privacy: "public" | "family" | "private") => {
     if (!memorial || !id || !isCreator) return;
     
     try {
@@ -391,7 +396,7 @@ const MemorialPage = () => {
                 </div>
                 
                 {memories.length > 0 ? (
-                  <MemoryTimeline memories={memories} />
+                  <MemoryTimeline memories={memories} onDeleteMemory={handleDeleteMemory} />
                 ) : (
                   <div className="text-center py-10 bg-neutral-50 rounded-lg">
                     <p className="text-neutral-600 mb-4">No memories have been shared yet.</p>

@@ -47,6 +47,111 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Allow POST (generate narrative) and DELETE (delete memory) requests
+    if (req.method === "DELETE") {
+      // --- DELETE MEMORY HANDLER ---
+      // Parse memoryId from query string
+      const url = new URL(req.url);
+      const memoryId = url.searchParams.get("memoryId");
+      if (!memoryId) {
+        return new Response(
+          JSON.stringify({ error: "Missing memoryId in query string" }),
+          {
+            status: 400,
+            headers: {
+              "Content-Type": "application/json",
+              ...corsHeaders,
+            },
+          }
+        );
+      }
+      // Verify authentication
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: "Missing authorization header" }),
+          {
+            status: 401,
+            headers: {
+              "Content-Type": "application/json",
+              ...corsHeaders,
+            },
+          }
+        );
+      }
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized", details: authError }),
+          {
+            status: 401,
+            headers: {
+              "Content-Type": "application/json",
+              ...corsHeaders,
+            },
+          }
+        );
+      }
+      // Fetch the memory and verify ownership
+      const { data: memory, error: memoryError } = await supabase
+        .from("memories")
+        .select("id, user_id")
+        .eq("id", memoryId)
+        .single();
+      if (memoryError || !memory) {
+        return new Response(
+          JSON.stringify({ error: "Memory not found or already deleted", details: memoryError }),
+          {
+            status: 404,
+            headers: {
+              "Content-Type": "application/json",
+              ...corsHeaders,
+            },
+          }
+        );
+      }
+      // Check if the memory belongs to the user
+      if (memory.user_id !== user.id) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden: You do not own this memory." }),
+          {
+            status: 403,
+            headers: {
+              "Content-Type": "application/json",
+              ...corsHeaders,
+            },
+          }
+        );
+      }
+      // Delete the memory
+      const { error: deleteError } = await supabase
+        .from("memories")
+        .delete()
+        .eq("id", memoryId);
+      if (deleteError) {
+        return new Response(
+          JSON.stringify({ error: "Failed to delete memory", details: deleteError }),
+          {
+            status: 500,
+            headers: {
+              "Content-Type": "application/json",
+              ...corsHeaders,
+            },
+          }
+        );
+      }
+      return new Response(
+        JSON.stringify({ success: true, message: "Memory deleted successfully." }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        }
+      );
+    }
     // Only accept POST requests
     if (req.method !== "POST") {
       return new Response(
@@ -167,7 +272,7 @@ Deno.serve(async (req) => {
       style: memorialData.style || 'conversational'
     } as Memorial;
 
-    // Fetch memories for this memorial - Fixed column name to match database schema
+    // Fetch memories for this memorial
     let memories: Memory[] = [];
     
     if (providedMemories && providedMemories.length > 0) {
@@ -178,7 +283,7 @@ Deno.serve(async (req) => {
       const { data: memoriesData, error: memoriesError } = await supabase
         .from("memories")
         .select("*")
-        .eq("memorialid", memorialId);  // Changed from "memorialId" to "memorialid" to match DB schema
+        .eq("memorialid", memorialId);  
 
       if (memoriesError) {
         console.error("Error fetching memories:", memoriesError);
@@ -194,7 +299,16 @@ Deno.serve(async (req) => {
         );
       }
 
-      memories = memoriesData.map(item => ({
+      // Type for raw DB row
+      type MemoryRow = {
+        id: string;
+        content: string;
+        relationship?: string;
+        timeperiod?: string;
+        emotion?: string;
+        contributorname?: string;
+      };
+      memories = (memoriesData as MemoryRow[]).map((item) => ({
         id: item.id,
         content: item.content,
         relationship: item.relationship,
@@ -318,8 +432,14 @@ Deno.serve(async (req) => {
     }
   } catch (error) {
     console.error("Error processing request:", error);
+    let details = "Unknown error";
+    if (error instanceof Error) {
+      details = error.message;
+    } else if (typeof error === "string") {
+      details = error;
+    }
     return new Response(
-      JSON.stringify({ error: "Internal Server Error", details: error.message }),
+      JSON.stringify({ error: "Internal Server Error", details }),
       {
         status: 500,
         headers: {
@@ -413,7 +533,8 @@ async function updateRateLimit(userId: string) {
 
 // Function to generate a simple fallback narrative based on memories
 function generateFallbackNarrative(memorial: Memorial, memories: Memory[]): string {
-  const name = memorial.fullName.split(' ')[0] || "I";
+  // Removed 'name' variable (was: const name = memorial.fullName.split(' ')[0] || "I";)
+  // To personalize the narrative with the first name, integrate it into the returned text.
   
   // Extract key details from memories
   const relationships = memories
@@ -703,7 +824,7 @@ async function generateNarrativeWithOpenAI(prompt: string): Promise<string> {
       console.error("Parsed error:", errorData);
       
       throw new Error(`OpenAI API error: ${errorData.error?.message || errorData.message || "Unknown error"}`);
-    } catch (parseError) {
+    } catch {
       throw new Error(`OpenAI API error (${response.status}): ${errorText.substring(0, 200)}`);
     }
   }
